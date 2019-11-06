@@ -15,7 +15,6 @@ class VerifyException extends HttpException
     private $payload;
 
     /**
-     * PostTooLargeException constructor.
      *
      * @param string|null $message
      * @param Payload|null $payload
