@@ -1,0 +1,160 @@
+<?php
+
+
+namespace Hypocenter\LaravelSignature;
+
+
+use Hypocenter\LaravelSignature\Interfaces\Repository;
+use Hypocenter\LaravelSignature\Interfaces\Resolver;
+use Hypocenter\LaravelSignature\Interfaces\Driver;
+use Hypocenter\LaravelSignature\Entities\Payload;
+use Illuminate\Support\Facades\Cache;
+
+class Signature implements Driver
+{
+    /**
+     * @var Repository
+     */
+    private $repository;
+    /**
+     * @var Resolver
+     */
+    private $resolver;
+
+    private $nonceLength = 16;
+
+    private $cacheDriver;
+
+    private $cacheName = 'laravel_signature';
+
+    private $time_tolerance = 5 * 60;
+
+    public function __construct() { }
+
+    public function setConfig(array $config)
+    {
+        if (isset($config['nonce_length'])) {
+            $this->nonceLength = intval($config['nonce_length']);
+        }
+        if (isset($config['cache_driver'])) {
+            $this->cacheDriver = $config['cache_driver'];
+        }
+        if (isset($config['ttl'])) {
+            $this->time_tolerance = $config['ttl'];
+        }
+        if (isset($config['cache_name'])) {
+            $this->cacheName = $config['cache_name'];
+        }
+    }
+
+    public function setResolver(?Resolver $resolver)
+    {
+        $this->resolver = $resolver;
+    }
+
+    public function setRepository(?Repository $repository)
+    {
+        $this->repository = $repository;
+    }
+
+    public function sign(Payload $payload): string
+    {
+        if (!$payload->getAppId()) {
+            throw new \InvalidArgumentException('no app ID');
+        }
+
+        $define = $this->repository->findByAppId($payload->getAppId());
+        if (!$define) {
+            return '';
+        }
+
+        !$payload->getTimestamp() && $payload->setTimestamp(time());
+        !$payload->getNonce() && $payload->setNonce($this->nonce($this->nonceLength));
+
+        $data = (array)$payload->getData();
+        $this->sort($data);
+
+        $signArr = [
+            $payload->getAppId(),
+            $define->getSecret(),
+            $payload->getTimestamp(),
+            $payload->getMethod(),
+            $payload->getPath(),
+            json_encode($data, JSON_UNESCAPED_UNICODE),
+            $payload->getNonce(),
+        ];
+
+        $raw = join('|', $signArr);
+        $payload->setRaw($raw);
+
+        $sign = hash_hmac('sha1', $raw, $define->getSecret());
+        $payload->setSign($sign);
+
+        return $sign;
+    }
+
+    public function verify(Payload $payload): bool
+    {
+        !$payload->getAppId() && $payload->setAppId($this->resolver->getAppId());
+        !$payload->getTimestamp() && $payload->setTimestamp($this->resolver->getTimestamp());
+        !$payload->getMethod() && $payload->setMethod($this->resolver->getMethod());
+        !$payload->getPath() && $payload->setPath($this->resolver->getPath());
+        !$payload->getNonce() && $payload->setNonce($this->resolver->getNonce());
+
+        if (!$payload->getTimestamp()) {
+            $payload->setFailedReason('时间戳不能为空');
+            return false;
+        }
+
+        if (abs(time() - $payload->getTimestamp()) > $this->time_tolerance) {
+            $payload->setFailedReason('请求时间戳和服务器起时间差异过大');
+            return false;
+        }
+
+        $this->sign($payload);
+
+        if ($payload->getSign() !== $this->resolver->getSign()) {
+            $payload->setFailedReason('签名不匹配');
+            return false;
+        }
+
+        if ($this->cache()->get($this->cacheKey($payload->getSign()))) {
+            $payload->setFailedReason('签名已经使用过了');
+            return false;
+        }
+
+        // 防止重放
+        $this->cache()->set($this->cacheKey($payload->getSign()), 1, $this->time_tolerance * 2 + 1);
+
+        return true;
+    }
+
+    public function sort(array &$data)
+    {
+        ksort($data);
+        foreach ($data as $i => $v) {
+            if (is_array($v)) {
+                $data[$i] = $this->sort($v);
+            }
+        }
+    }
+
+    private function nonce($len)
+    {
+        $seeds = '1234567890qwertyuiopasdfghjklzxcvbnmQWERTYUIOPASDFGHJKLZXCVBNM';
+        $nonce = '';
+        for ($i = 0; $i < $len; $i++) {
+            $nonce .= $seeds[mt_rand(0, 62)];
+        }
+    }
+
+    private function cache()
+    {
+        return Cache::store($this->cacheDriver);
+    }
+
+    private function cacheKey($key)
+    {
+        return "{$this->cacheName}:{$key}";
+    }
+}

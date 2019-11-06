@@ -1,0 +1,32 @@
+{
+  "name": "hypocenter/laravel-signature",
+  "type": "library",
+  "description": "Signature helper for Laravel",
+  "authors": [
+    {
+      "name": "hypo",
+      "email": "hypomail@gmail.com"
+    }
+  ],
+  "support": {
+    "issues": "https://github.com/hypocenter/laravel-signature/issues",
+    "source": "https://github.com/hypocenter/laravel-signature"
+  },
+  "autoload": {
+    "psr-4": {
+      "Hypocenter\\LaravelSignature\\": "src/"
+    }
+  },
+  "require": {
+    "php": "^7.1.3",
+    "laravel/framework": "^5.5||^6.0",
+    "ext-json": "*"
+  },
+  "extra": {
+    "laravel": {
+      "providers": [
+        "Hypocenter\\LaravelSignature\\SignatureServiceProvider"
+      ]
+    }
+  }
+}
