@@ -27,7 +27,7 @@ class SignatureManager implements Factory
         $this->config = $config;
     }
 
-    public function driver($name = null)
+    public function driver($name = null): Driver
     {
         $name = $name ?: data_get($this->config, 'default', 'default');
 

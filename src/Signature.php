@@ -65,22 +65,21 @@ class Signature implements Driver
 
         $define = $this->repository->findByAppId($payload->getAppId());
         if (!$define) {
-            return '';
+            throw new \InvalidArgumentException('app setting not found');
         }
 
         !$payload->getTimestamp() && $payload->setTimestamp(time());
         !$payload->getNonce() && $payload->setNonce($this->nonce($this->nonceLength));
 
         $data = (array)$payload->getData();
-        $this->sort($data);
 
         $signArr = [
             $payload->getAppId(),
             $define->getSecret(),
             $payload->getTimestamp(),
-            $payload->getMethod(),
-            $payload->getPath(),
-            json_encode($data, JSON_UNESCAPED_UNICODE),
+            strtolower($payload->getMethod()),
+            strtolower($payload->getPath()),
+            $this->arr2str($data),
             $payload->getNonce(),
         ];
 
@@ -101,13 +100,29 @@ class Signature implements Driver
         !$payload->getPath() && $payload->setPath($this->resolver->getPath());
         !$payload->getNonce() && $payload->setNonce($this->resolver->getNonce());
 
+        if (!$payload->getAppId()) {
+            $payload->setFailedReason('AppID 不能为空');
+            return false;
+        }
         if (!$payload->getTimestamp()) {
             $payload->setFailedReason('时间戳不能为空');
             return false;
         }
+        if (!$payload->getPath()) {
+            $payload->setFailedReason('请求路径不能为空');
+            return false;
+        }
+        if (!$payload->getMethod()) {
+            $payload->setFailedReason('请求方法不能为空');
+            return false;
+        }
+        if (!$payload->getNonce()) {
+            $payload->setFailedReason('随机数不能为空');
+            return false;
+        }
 
         if (abs(time() - $payload->getTimestamp()) > $this->time_tolerance) {
-            $payload->setFailedReason('请求时间戳和服务器起时间差异过大');
+            $payload->setFailedReason('请求时间戳和服务器时间差异过大');
             return false;
         }
 
@@ -119,7 +134,7 @@ class Signature implements Driver
         }
 
         if ($this->cache()->get($this->cacheKey($payload->getSign()))) {
-            $payload->setFailedReason('签名已经使用过了');
+            $payload->setFailedReason('签名已经过期');
             return false;
         }
 
@@ -129,14 +144,16 @@ class Signature implements Driver
         return true;
     }
 
-    public function sort(array &$data)
+    private function arr2str(array &$data)
     {
+        $str = [];
+
         ksort($data);
-        foreach ($data as $i => $v) {
-            if (is_array($v)) {
-                $data[$i] = $this->sort($v);
-            }
+        foreach ($data as $i => &$v) {
+            $str[] = "{$i}:" . (is_array($v) ? '[' . $this->arr2str($v) . ']' : $v);
         }
+
+        return join(';', $str);
     }
 
     private function nonce($len)
@@ -144,8 +161,10 @@ class Signature implements Driver
         $seeds = '1234567890qwertyuiopasdfghjklzxcvbnmQWERTYUIOPASDFGHJKLZXCVBNM';
         $nonce = '';
         for ($i = 0; $i < $len; $i++) {
-            $nonce .= $seeds[mt_rand(0, 62)];
+            $nonce .= $seeds[mt_rand(0, 61)];
         }
+
+        return $nonce;
     }
 
     private function cache()

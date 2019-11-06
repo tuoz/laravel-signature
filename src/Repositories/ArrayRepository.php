@@ -14,13 +14,16 @@ class ArrayRepository implements Repository
     public function findByAppId($appId): ?Define
     {
         $def = collect($this->defines)->firstWhere('id', $appId);
+        if (!$def) {
+            return null;
+        }
         return new Define($def['id'], $def['name'], $def['secret'], $def['config']);
     }
 
     public function setConfig(array $config)
     {
-        if (!empty($config['defines'])) {
-            $this->defines = [];
+        if (isset($config['defines'])) {
+            $this->defines = $config['defines'];
         }
     }
 }

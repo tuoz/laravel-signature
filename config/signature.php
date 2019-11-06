@@ -1,8 +1,10 @@
 <?php
 
 return [
-    'default' => env('SIGNATURE_DRIVER', 'default'),
+    // 默认的驱动
+    'default' => 'default',
 
+    // 驱动配置
     'drivers' => [
         'default' => [
             'class'        => \Hypocenter\LaravelSignature\Signature::class,
@@ -10,7 +12,7 @@ return [
             'repository'   => 'array',
             'nonce_length' => 16,
             'ttl'          => 5 * 60,
-            'cache_driver' => 'default',
+            'cache_driver' => 'file',
         ]
     ],
 
@@ -33,6 +35,7 @@ return [
         'array' => [
             'class'   => \Hypocenter\LaravelSignature\Repositories\ArrayRepository::class,
             'defines' => [
+                // Add more defines here.
                 [
                     'id'     => 'tFVzAUy07VIj2p8v',
                     'name'   => 'RPC',

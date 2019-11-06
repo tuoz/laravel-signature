@@ -24,7 +24,7 @@ class ModelRepository implements Repository
 
     public function setConfig(array $config)
     {
-        if (!empty($config['model'])) {
+        if (isset($config['model'])) {
             $this->model = $config['model'];
         }
     }
