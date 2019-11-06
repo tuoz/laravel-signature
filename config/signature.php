@@ -7,12 +7,12 @@ return [
     // 驱动配置
     'drivers' => [
         'default' => [
-            'class'        => \Hypocenter\LaravelSignature\Signature::class,
-            'resolver'     => 'header',
-            'repository'   => 'array',
-            'nonce_length' => 16,
-            'ttl'          => 5 * 60,
-            'cache_driver' => 'file',
+            'class'          => \Hypocenter\LaravelSignature\Signature::class,
+            'resolver'       => 'header',
+            'repository'     => 'array',
+            'nonce_length'   => 16, // 随机字符串长度
+            'time_tolerance' => 5 * 60, // 时间宽容度
+            'cache_driver'   => 'file', // 缓存驱动
         ]
     ],
 

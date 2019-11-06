@@ -39,8 +39,8 @@ class Signature implements Driver
         if (isset($config['cache_driver'])) {
             $this->cacheDriver = $config['cache_driver'];
         }
-        if (isset($config['ttl'])) {
-            $this->time_tolerance = $config['ttl'];
+        if (isset($config['time_tolerance'])) {
+            $this->time_tolerance = $config['time_tolerance'];
         }
         if (isset($config['cache_name'])) {
             $this->cacheName = $config['cache_name'];
