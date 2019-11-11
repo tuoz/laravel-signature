@@ -4,17 +4,8 @@
 namespace Hypocenter\LaravelSignature\Resolvers;
 
 
-use Hypocenter\LaravelSignature\Interfaces\Resolver;
-use Hypocenter\LaravelSignature\Entities\Payload;
-use Illuminate\Http\Request;
-use Illuminate\Support\Str;
-
-class HeaderResolver implements Resolver
+class HeaderResolver extends RequestResolver
 {
-    /**
-     * @var Request
-     */
-    private $request;
     /**
      * @var array
      */
@@ -24,11 +15,6 @@ class HeaderResolver implements Resolver
         'key_timestamp' => 'X-SIGN-TIME',
         'key_nonce'     => 'X-SIGN-NONCE',
     ];
-
-    public function __construct(Request $request)
-    {
-        $this->request = $request;
-    }
 
     public function setConfig(array $config)
     {
@@ -53,16 +39,6 @@ class HeaderResolver implements Resolver
     public function getNonce(): ?string
     {
         return $this->httpHeader($this->config['key_nonce']);
-    }
-
-    public function getMethod(): ?string
-    {
-        return $this->request->method();
-    }
-
-    public function getPath(): ?string
-    {
-        return $this->request->path();
     }
 
     private function httpHeader($k)

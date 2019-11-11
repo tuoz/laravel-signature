@@ -99,6 +99,7 @@ class Signature implements Driver
         !$payload->getMethod() && $payload->setMethod($this->resolver->getMethod());
         !$payload->getPath() && $payload->setPath($this->resolver->getPath());
         !$payload->getNonce() && $payload->setNonce($this->resolver->getNonce());
+        !$payload->getData() && $payload->setData($this->resolver->getData());
 
         if (!$payload->getAppId()) {
             $payload->setFailedReason('AppID 不能为空');
@@ -144,8 +145,12 @@ class Signature implements Driver
         return true;
     }
 
-    private function arr2str(array &$data)
+    private function arr2str(?array &$data)
     {
+        if (!$data) {
+            return '';
+        }
+
         $str = [];
 
         ksort($data);

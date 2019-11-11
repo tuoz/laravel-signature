@@ -17,4 +17,6 @@ interface Resolver extends SetConfig
     public function getMethod(): ?string;
 
     public function getPath(): ?string;
+
+    public function getData(): ?array;
 }
