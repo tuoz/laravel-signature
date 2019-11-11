@@ -31,7 +31,7 @@ return [
     // 驱动配置
     'drivers' => [
         'default' => [
-            'class'        => \Hypocenter\LaravelSignature\Signature::class,
+            'class'          => \Hypocenter\LaravelSignature\Signature::class,
             'resolver'       => 'header',
             'repository'     => 'array',
             'nonce_length'   => 16, // 随机字符串长度
