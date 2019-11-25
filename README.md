@@ -1,6 +1,8 @@
 # laravel-signature
 Signature helper for Laravel
 
+[三方接入文档](./INTERGRATION.md)
+
 #### 特性
 
 * 对请求参数进行签名验证, 以保证数据的完整性
@@ -96,17 +98,26 @@ return [
 如果作为客户端,单独使用签名可无需 `Resolver`, 但 `Repositroy` 必须配置
 
 ```php
-$payload = new Payload();
+$client = new \GuzzleHttp\Client(['base_uri' => env('RPC_SERVER')]);
 
-$payload->setAppId('tFVzAUy07VIj2p8v');
-$payload->setData(['c' => 2, 'a' => 1]);
-$payload->setMethod('POST');
-$payload->setPath('api/test-sign');
+$payload = new Payload();
+$payload->setAppId('you app ID');
+$payload->setData(['page' => 1, 'page_size' => 20]);
+$payload->setMethod('GET');
+$payload->setPath('api/users');
 
 $driver = app('signature')->driver();
 $driver->sign($payload);
 
-dump($payload);
+$res = $client->request($payload->getMethod(), $payload->getPath() . '?'. http_build_query($payload->getData()), [
+    'headers' => [
+        'Accept'        =>"application/json",
+        'X-SIGN-APP-ID' => $payload->getAppId(),
+        'X-SIGN'        => $payload->getSign(),
+        'X-SIGN-TIME'   => $payload->getTimestamp(),
+        'X-SIGN-NONCE'  => $payload->getNonce()
+    ]
+]);
 ```
 
 #### 中间件
