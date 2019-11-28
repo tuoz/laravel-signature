@@ -57,6 +57,16 @@ class Signature implements Driver
         $this->repository = $repository;
     }
 
+    public function getResolver(): ?Resolver
+    {
+        return $this->resolver;
+    }
+
+    public function getRepository(): ?Repository
+    {
+        return $this->repository;
+    }
+
     public function sign(Payload $payload): string
     {
         if (!$payload->getAppId()) {
