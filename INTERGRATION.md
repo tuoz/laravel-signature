@@ -110,6 +110,7 @@ $res = $client->request($method, $path . '?' . http_build_query($query), [
 ]);
 ```
 ### Java 示例代码
+其他工具类涉及到 hutool工具类，详情https://hutool.cn/docs/#/
 ```java
 public JSONObject request(HttpServletRequest httpServletRequest) throws UNIException {
         String method = httpServletRequest.getMethod().toLowerCase();
@@ -148,7 +149,7 @@ public JSONObject request(HttpServletRequest httpServletRequest) throws UNIExcep
      * @param params
      * @return
      */
-    public static String arr2str(Map<String, String[]> params) {
+public static String arr2str(Map<String, String[]> params) {
         StringBuilder sb = new StringBuilder();
         if (!CollectionUtils.isEmpty(params)) {
             params.entrySet()
@@ -172,7 +173,7 @@ public JSONObject request(HttpServletRequest httpServletRequest) throws UNIExcep
      * @param parameterMap
      * @return
      */
-    public static Map getMap(Map<String, String[]> parameterMap) {
+public static Map getMap(Map<String, String[]> parameterMap) {
         Map pMap = new HashMap();
         Iterator entries = parameterMap.entrySet().iterator();
         Map.Entry entry;
