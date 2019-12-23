@@ -109,3 +109,35 @@ $res = $client->request($method, $path . '?' . http_build_query($query), [
     ]
 ]);
 ```
+```Java
+public JSONObject request(HttpServletRequest httpServletRequest) throws UNIException {
+        String method = httpServletRequest.getMethod().toLowerCase();
+        String requestURI = httpServletRequest.getRequestURI();
+//        String requestURI = "api/outer/socials/customer_api_import";
+        Map<String, String[]> parameterMap = httpServletRequest.getParameterMap();
+        //时间戳
+        String timeStamp = DateUtil.currentSeconds() + "";
+        //随机字符串
+        String nonce = RandomUtil.randomString(10);
+        //请求路径
+        String path = uni + requestURI;
+        ArrayList signArr = new ArrayList();
+        signArr.add(appId);
+        signArr.add(secret);
+        signArr.add(timeStamp);
+        signArr.add(method.toLowerCase());
+        signArr.add(requestURI.toLowerCase());
+        signArr.add(SignatureUtil.arr2str(parameterMap));
+        signArr.add(nonce);
+        String join = CollUtil.join(signArr, "|");
+        HMac hmac = SecureUtil.hmac(HmacAlgorithm.HmacSHA1, secret);
+        String digestHex = hmac.digestHex(join);
+        Map pMap = SignatureUtil.getMap(parameterMap);
+        HttpResponse execute = SignatureUtil.getMethod(path, method, pMap)
+                .header("X-SIGN-APP-ID", appId)
+                .header("X-SIGN", digestHex)
+                .header("X-SIGN-TIME", timeStamp)
+                .header("X-SIGN-NONCE", nonce)
+                .execute();
+        return getJSONObject(execute);
+```
