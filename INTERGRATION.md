@@ -141,4 +141,60 @@ public JSONObject request(HttpServletRequest httpServletRequest) throws UNIExcep
                 .execute();
         return getJSONObject(execute);
 }
+
+/**
+     * 遍历参数，组装成字符串
+     *
+     * @param params
+     * @return
+     */
+    public static String arr2str(Map<String, String[]> params) {
+        StringBuilder sb = new StringBuilder();
+        if (!CollectionUtils.isEmpty(params)) {
+            params.entrySet()
+                    .stream()
+                    .sorted(Map.Entry.comparingByKey())
+                    .forEach(paramEntry -> {
+                        String paramValue = String.join(";", Arrays.stream(paramEntry.getValue()).sorted().toArray(String[]::new));
+                        sb.append(paramEntry.getKey()).append(":").append(paramValue).append(';');
+                    });
+        } else {
+            return "";
+        }
+        String string = sb.toString();
+        String trimEnd = StrUtil.removeSuffix(string, ";");
+        return trimEnd;
+}
+
+    /**
+     * 组装参数成map
+     *
+     * @param parameterMap
+     * @return
+     */
+    public static Map getMap(Map<String, String[]> parameterMap) {
+        Map pMap = new HashMap();
+        Iterator entries = parameterMap.entrySet().iterator();
+        Map.Entry entry;
+        String name = "";
+        String value = "";
+        while (entries.hasNext()) {
+            entry = (Map.Entry) entries.next();
+            name = (String) entry.getKey();
+            Object valueObj = entry.getValue();
+            if (null == valueObj) {
+                value = "";
+            } else if (valueObj instanceof String[]) {
+                String[] values = (String[]) valueObj;
+                for (int i = 0; i < values.length; i++) {
+                    value = values[i] + ",";
+                }
+                value = value.substring(0, value.length() - 1);
+            } else {
+                value = valueObj.toString();
+            }
+            pMap.put(name, value.trim());
+        }
+        return pMap;
+}
 ```
