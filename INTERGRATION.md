@@ -109,8 +109,8 @@ $res = $client->request($method, $path . '?' . http_build_query($query), [
     ]
 ]);
 ```
-Java 请求示例代码
-```Java
+### Java 示例代码
+```java
 public JSONObject request(HttpServletRequest httpServletRequest) throws UNIException {
         String method = httpServletRequest.getMethod().toLowerCase();
         String requestURI = httpServletRequest.getRequestURI();
