@@ -110,92 +110,92 @@ $res = $client->request($method, $path . '?' . http_build_query($query), [
 ]);
 ```
 ### Java 示例代码
-其他工具类涉及到 hutool工具类，详情https://hutool.cn/docs/#/
+其他工具类涉及到 hutool工具类，详情 https://hutool.cn/docs/
 ```java
 public JSONObject request(HttpServletRequest httpServletRequest) throws UNIException {
-        String method = httpServletRequest.getMethod().toLowerCase();
-        String requestURI = httpServletRequest.getRequestURI();
-        Map<String, String[]> parameterMap = httpServletRequest.getParameterMap();
-        //时间戳
-        String timeStamp = DateUtil.currentSeconds() + "";
-        //随机字符串
-        String nonce = RandomUtil.randomString(10);
-        //请求路径
-        String path = uni + requestURI;
-        ArrayList signArr = new ArrayList();
-        signArr.add(appId);
-        signArr.add(secret);
-        signArr.add(timeStamp);
-        signArr.add(method.toLowerCase());
-        signArr.add(requestURI.toLowerCase());
-        signArr.add(SignatureUtil.arr2str(parameterMap));
-        signArr.add(nonce);
-        String join = CollUtil.join(signArr, "|");
-        HMac hmac = SecureUtil.hmac(HmacAlgorithm.HmacSHA1, secret);
-        String digestHex = hmac.digestHex(join);
-        Map pMap = SignatureUtil.getMap(parameterMap);
-        HttpResponse execute = SignatureUtil.getMethod(path, method, pMap)
-                .header("X-SIGN-APP-ID", appId)
-                .header("X-SIGN", digestHex)
-                .header("X-SIGN-TIME", timeStamp)
-                .header("X-SIGN-NONCE", nonce)
-                .execute();
-        return getJSONObject(execute);
+  String method = httpServletRequest.getMethod().toLowerCase();
+  String requestURI = httpServletRequest.getRequestURI();
+  Map<String, String[]> parameterMap = httpServletRequest.getParameterMap();
+  //时间戳
+  String timeStamp = DateUtil.currentSeconds() + "";
+  //随机字符串
+  String nonce = RandomUtil.randomString(10);
+  //请求路径
+  String path = uni + requestURI;
+  ArrayList signArr = new ArrayList();
+  signArr.add(appId);
+  signArr.add(secret);
+  signArr.add(timeStamp);
+  signArr.add(method.toLowerCase());
+  signArr.add(requestURI.toLowerCase());
+  signArr.add(SignatureUtil.arr2str(parameterMap));
+  signArr.add(nonce);
+  String join = CollUtil.join(signArr, "|");
+  HMac hmac = SecureUtil.hmac(HmacAlgorithm.HmacSHA1, secret);
+  String digestHex = hmac.digestHex(join);
+  Map pMap = SignatureUtil.getMap(parameterMap);
+  HttpResponse execute = SignatureUtil.getMethod(path, method, pMap)
+    .header("X-SIGN-APP-ID", appId)
+    .header("X-SIGN", digestHex)
+    .header("X-SIGN-TIME", timeStamp)
+    .header("X-SIGN-NONCE", nonce)
+    .execute();
+  return getJSONObject(execute);
 }
 
 /**
-     * 遍历参数，组装成字符串
-     *
-     * @param params
-     * @return
-     */
+ * 遍历参数，组装成字符串
+ *
+ * @param params
+ * @return
+ */
 public static String arr2str(Map<String, String[]> params) {
-        StringBuilder sb = new StringBuilder();
-        if (!CollectionUtils.isEmpty(params)) {
-            params.entrySet()
-                    .stream()
-                    .sorted(Map.Entry.comparingByKey())
-                    .forEach(paramEntry -> {
-                        String paramValue = String.join(";", Arrays.stream(paramEntry.getValue()).sorted().toArray(String[]::new));
-                        sb.append(paramEntry.getKey()).append(":").append(paramValue).append(';');
-                    });
-        } else {
-            return "";
-        }
-        String string = sb.toString();
-        String trimEnd = StrUtil.removeSuffix(string, ";");
-        return trimEnd;
+  StringBuilder sb = new StringBuilder();
+  if (!CollectionUtils.isEmpty(params)) {
+    params.entrySet()
+      .stream()
+      .sorted(Map.Entry.comparingByKey())
+      .forEach(paramEntry -> {
+        String paramValue = String.join(";", Arrays.stream(paramEntry.getValue()).sorted().toArray(String[]::new));
+        sb.append(paramEntry.getKey()).append(":").append(paramValue).append(';');
+      });
+  } else {
+    return "";
+  }
+  String string = sb.toString();
+  String trimEnd = StrUtil.removeSuffix(string, ";");
+  return trimEnd;
 }
 
-    /**
-     * 组装参数成map
-     *
-     * @param parameterMap
-     * @return
-     */
+/**
+ * 组装参数成map
+ *
+ * @param parameterMap
+ * @return
+ */
 public static Map getMap(Map<String, String[]> parameterMap) {
-        Map pMap = new HashMap();
-        Iterator entries = parameterMap.entrySet().iterator();
-        Map.Entry entry;
-        String name = "";
-        String value = "";
-        while (entries.hasNext()) {
-            entry = (Map.Entry) entries.next();
-            name = (String) entry.getKey();
-            Object valueObj = entry.getValue();
-            if (null == valueObj) {
-                value = "";
-            } else if (valueObj instanceof String[]) {
-                String[] values = (String[]) valueObj;
-                for (int i = 0; i < values.length; i++) {
-                    value = values[i] + ",";
-                }
-                value = value.substring(0, value.length() - 1);
-            } else {
-                value = valueObj.toString();
-            }
-            pMap.put(name, value.trim());
-        }
-        return pMap;
+  Map pMap = new HashMap();
+  Iterator entries = parameterMap.entrySet().iterator();
+  Map.Entry entry;
+  String name = "";
+  String value = "";
+  while (entries.hasNext()) {
+    entry = (Map.Entry) entries.next();
+    name = (String) entry.getKey();
+    Object valueObj = entry.getValue();
+    if (null == valueObj) {
+      value = "";
+    } else if (valueObj instanceof String[]) {
+      String[] values = (String[]) valueObj;
+      for (int i = 0; i < values.length; i++) {
+        value = values[i] + ",";
+      }
+      value = value.substring(0, value.length() - 1);
+    } else {
+      value = valueObj.toString();
+    }
+    pMap.put(name, value.trim());
+  }
+  return pMap;
 }
 ```
