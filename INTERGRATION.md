@@ -109,11 +109,11 @@ $res = $client->request($method, $path . '?' . http_build_query($query), [
     ]
 ]);
 ```
+Java 请求示例代码
 ```Java
 public JSONObject request(HttpServletRequest httpServletRequest) throws UNIException {
         String method = httpServletRequest.getMethod().toLowerCase();
         String requestURI = httpServletRequest.getRequestURI();
-//        String requestURI = "api/outer/socials/customer_api_import";
         Map<String, String[]> parameterMap = httpServletRequest.getParameterMap();
         //时间戳
         String timeStamp = DateUtil.currentSeconds() + "";
@@ -140,4 +140,5 @@ public JSONObject request(HttpServletRequest httpServletRequest) throws UNIExcep
                 .header("X-SIGN-NONCE", nonce)
                 .execute();
         return getJSONObject(execute);
+        }
 ```
