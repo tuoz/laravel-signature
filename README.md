@@ -28,38 +28,49 @@ php artisan vendor:publish --provider="Hypocenter\LaravelSignature\SignatureServ
 
 return [
     // 默认的驱动
-    'default' => 'default',
+    'default'      => 'default',
 
-    // 驱动配置
-    'drivers' => [
+    // 支持多个签名器配置
+    'signatures'   => [
         'default' => [
-            'class'          => \Hypocenter\LaravelSignature\Signature::class,
             'resolver'       => 'header',
             'repository'     => 'array',
-            'nonce_length'   => 16, // 随机字符串长度
-            'time_tolerance' => 5 * 60, // 时间宽容度,秒
-            'cache_driver'   => 'file', // 缓存驱动
+            'nonce_length'   => 16,
+            'cache_driver'   => 'file',
+            'cache_name'     => 'laravel-signature',
+            'time_tolerance' => 5* 60,
+            'default_app_id' => 'tFVzAUy07VIj2p8v',
         ]
     ],
 
-    'resolvers' => [
+    // 数据获取器定义，支持从不同来源获取
+    'resolvers'    => [
         'header' => [
-            'class'         => \Hypocenter\LaravelSignature\Resolvers\HeaderResolver::class,
+            'class'         => Hypocenter\LaravelSignature\Payload\Resolvers\HeaderResolver::class,
             'key_app_id'    => 'X-SIGN-APP-ID',
             'key_sign'      => 'X-SIGN',
             'key_timestamp' => 'X-SIGN-TIME',
             'key_nonce'     => 'X-SIGN-NONCE',
+        ],
+        'query'  => [
+            'class'         => Hypocenter\LaravelSignature\Payload\Resolvers\QueryResolver::class,
+            'key_app_id'    => '_appid',
+            'key_sign'      => '_sign',
+            'key_timestamp' => '_time',
+            'key_nonce'     => '_nonce',
         ]
     ],
 
+    // App 定义数据仓库，支持从不同来源获取
     'repositories' => [
+        // 从数据库中读取
         'model' => [
-            'class' => \Hypocenter\LaravelSignature\Repositories\ModelRepository::class,
-            'model' => \Hypocenter\LaravelSignature\Models\Partner::class,
+            'class' => Hypocenter\LaravelSignature\Define\Repositories\ModelRepository::class,
+            'model' => Hypocenter\LaravelSignature\Define\Models\AppDefine::class,
         ],
-
+        // 从配置文件中读取
         'array' => [
-            'class'   => \Hypocenter\LaravelSignature\Repositories\ArrayRepository::class,
+            'class'   => Hypocenter\LaravelSignature\Define\Repositories\ArrayRepository::class,
             'defines' => [
                 // Add more defines here.
                 [
@@ -69,7 +80,7 @@ return [
                     'config' => null
                 ],
             ],
-        ]
+        ],
     ],
 ];
 ```
@@ -92,6 +103,7 @@ return [
 定义如何从请求中获取相关校验参数
 
 * HeaderResolver: 从 HTTP Header 中获取
+* QueryResolver: 从 GET 参数中获取
 
 #### 签名
 
@@ -100,18 +112,19 @@ return [
 ```php
 $client = new \GuzzleHttp\Client(['base_uri' => env('RPC_SERVER')]);
 
-$payload = new Payload();
-$payload->setAppId('you app ID');
-$payload->setData(['page' => 1, 'page_size' => 20]);
-$payload->setMethod('GET');
-$payload->setPath('api/users');
+$payload = new Payload::forSign()
+  ->setAppId('your app ID') // 如果设置了 default_app_id 可省略
+  ->setMethod('GET')
+  ->setPath('api/users')
+  ->setData(['page' => 1, 'page_size' => 20])
+  ->build();
 
-$driver = app('signature')->driver();
+$driver = app('signature')->get();
 $driver->sign($payload);
 
 $res = $client->request($payload->getMethod(), $payload->getPath() . '?'. http_build_query($payload->getData()), [
     'headers' => [
-        'Accept'        =>"application/json",
+        'Accept'        => "application/json",
         'X-SIGN-APP-ID' => $payload->getAppId(),
         'X-SIGN'        => $payload->getSign(),
         'X-SIGN-TIME'   => $payload->getTimestamp(),
