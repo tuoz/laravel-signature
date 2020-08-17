@@ -4,32 +4,29 @@
 namespace Hypocenter\LaravelSignature\Exceptions;
 
 
-use Hypocenter\LaravelSignature\Entities\Payload;
-use Symfony\Component\HttpKernel\Exception\HttpException;
+use Hypocenter\LaravelSignature\Payload\Payload;
+use Hypocenter\LaravelSignature\Signature\Context;
 
-class VerifyException extends HttpException
+class VerifyException extends \RuntimeException
 {
     /**
-     * @var null|Payload
+     * @var Context
      */
-    private $payload;
+    private $context;
 
-    /**
-     *
-     * @param string|null $message
-     * @param Payload|null $payload
-     * @param \Exception|null $previous
-     * @param array $headers
-     * @param int $code
-     */
-    public function __construct($message = null, Payload $payload = null, \Exception $previous = null, array $headers = [], $code = 0)
+    public function __construct($message, Context $context, $code = 0, \Throwable $previous = null)
     {
-        parent::__construct(400, $message, $previous, $headers, $code);
-        $this->payload = $payload;
+        parent::__construct($message, $code, $previous);
+        $this->context = $context;
     }
 
-    public function getPayload(): ?Payload
+    public function getPayload(): Payload
     {
-        return $this->payload;
+        return $this->context->getPayload();
+    }
+
+    public function getContext(): Context
+    {
+        return $this->context;
     }
 }

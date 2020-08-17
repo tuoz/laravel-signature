@@ -2,38 +2,49 @@
 
 return [
     // 默认的驱动
-    'default' => 'default',
+    'default'      => 'default',
 
-    // 驱动配置
-    'drivers' => [
+    // 支持多个签名器配置
+    'signatures'   => [
         'default' => [
-            'class'          => \Hypocenter\LaravelSignature\Signature::class,
             'resolver'       => 'header',
             'repository'     => 'array',
-            'nonce_length'   => 16, // 随机字符串长度
-            'time_tolerance' => 5 * 60, // 时间宽容度
-            'cache_driver'   => 'file', // 缓存驱动
+            'nonce_length'   => 16,
+            'cache_driver'   => 'file',
+            'cache_name'     => 'laravel-signature',
+            'time_tolerance' => 5* 60,
+            'default_app_id' => 'tFVzAUy07VIj2p8v',
         ]
     ],
 
-    'resolvers' => [
+    // 数据获取器定义，支持从不同来源获取
+    'resolvers'    => [
         'header' => [
-            'class'         => \Hypocenter\LaravelSignature\Resolvers\HeaderResolver::class,
+            'class'         => Hypocenter\LaravelSignature\Payload\Resolvers\HeaderResolver::class,
             'key_app_id'    => 'X-SIGN-APP-ID',
             'key_sign'      => 'X-SIGN',
             'key_timestamp' => 'X-SIGN-TIME',
             'key_nonce'     => 'X-SIGN-NONCE',
+        ],
+        'query'  => [
+            'class'         => Hypocenter\LaravelSignature\Payload\Resolvers\QueryResolver::class,
+            'key_app_id'    => '_appid',
+            'key_sign'      => '_sign',
+            'key_timestamp' => '_time',
+            'key_nonce'     => '_nonce',
         ]
     ],
 
+    // App 定义数据仓库，支持从不同来源获取
     'repositories' => [
+        // 从数据库中读取
         'model' => [
-            'class' => \Hypocenter\LaravelSignature\Repositories\ModelRepository::class,
-            'model' => \Hypocenter\LaravelSignature\Models\Partner::class,
+            'class' => Hypocenter\LaravelSignature\Define\Repositories\ModelRepository::class,
+            'model' => Hypocenter\LaravelSignature\Define\Models\AppDefine::class,
         ],
-
+        // 从配置文件中读取
         'array' => [
-            'class'   => \Hypocenter\LaravelSignature\Repositories\ArrayRepository::class,
+            'class'   => Hypocenter\LaravelSignature\Define\Repositories\ArrayRepository::class,
             'defines' => [
                 // Add more defines here.
                 [
@@ -43,6 +54,6 @@ return [
                     'config' => null
                 ],
             ],
-        ]
+        ],
     ],
 ];

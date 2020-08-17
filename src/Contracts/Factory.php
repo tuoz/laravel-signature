@@ -4,9 +4,9 @@
 namespace Hypocenter\LaravelSignature\Contracts;
 
 
-use Hypocenter\LaravelSignature\Interfaces\Driver;
+use Hypocenter\LaravelSignature\Signature\Signature;
 
 interface Factory
 {
-    public function driver($name = null): Driver;
+    public function get($name = null): Signature;
 }

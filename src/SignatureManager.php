@@ -5,9 +5,15 @@ namespace Hypocenter\LaravelSignature;
 
 
 use Hypocenter\LaravelSignature\Contracts\Factory;
-use Hypocenter\LaravelSignature\Interfaces\Repository;
-use Hypocenter\LaravelSignature\Interfaces\Resolver;
-use Hypocenter\LaravelSignature\Interfaces\Driver;
+use Hypocenter\LaravelSignature\Define\Repository;
+use Hypocenter\LaravelSignature\Define\RepositoryAware;
+use Hypocenter\LaravelSignature\Exceptions\InvalidArgumentException;
+use Hypocenter\LaravelSignature\Interfaces\Configurator;
+use Hypocenter\LaravelSignature\Payload\Resolver;
+use Hypocenter\LaravelSignature\Payload\ResolverAware;
+use Hypocenter\LaravelSignature\Signature\DefaultSignature;
+use Hypocenter\LaravelSignature\Signature\Signature;
+use Illuminate\Container\Container;
 use Illuminate\Support\Arr;
 
 class SignatureManager implements Factory
@@ -18,77 +24,89 @@ class SignatureManager implements Factory
     private $config;
 
     /**
-     * @var Driver[]
+     * @var Signature[]
      */
-    private $drivers = [];
+    private $instances = [];
+    /**
+     * @var Container
+     */
+    private $app;
 
-    public function __construct(array $config)
+    public function __construct(array $config, Container $app)
     {
         $this->config = $config;
+        $this->app = $app;
     }
 
-    public function driver($name = null): Driver
+    public function get($name = null): Signature
     {
         $name = $name ?: data_get($this->config, 'default', 'default');
 
-        if (isset($this->driver[$name])) {
-            return $this->drivers[$name];
+        if (isset($this->instances[$name])) {
+            return $this->instances[$name];
         }
 
-        $driver = $this->resolveDriver($name);
-        $this->drivers[$name] = $driver;
+        $signature = $this->resolveSignature($name);
+        $this->instances[$name] = $signature;
 
-        return $driver;
+        return $signature;
     }
 
-    private function resolveDriver($name): Driver
+    private function resolveSignature($name): Signature
     {
-        $c = data_get($this->config, "drivers.{$name}");
+        $c = data_get($this->config, "signatures.{$name}");
         if (!$c) {
-            throw new \InvalidArgumentException("no $name driver");
+            throw new InvalidArgumentException("no $name signature");
         }
 
-        /** @var Driver $signature */
-        $signature = app(data_get($c, 'class'));
+        /** @var Signature $signature */
+        $signature = $this->app->make(data_get($c, 'class') ?: DefaultSignature::class);
 
-        $signature->setConfig(Arr::except($c, ['class', 'resolver', 'repository']));
+        $this->applyConfigurator($signature, Arr::except($c, ['class', 'resolver', 'repository']));
 
-        if (data_get($c, 'resolver')) {
-            $signature->setResolver($this->resolveResolver(data_get($c, 'resolver')));
+        if ($signature instanceof ResolverAware && data_get($c, 'resolver')) {
+            $signature->setResolver($this->resolvePayloadResolver(data_get($c, 'resolver')));
         }
 
-        if (data_get($c, 'repository')) {
-            $signature->setRepository($this->resolveRepository(data_get($c, 'repository')));
+        if ($signature instanceof RepositoryAware && data_get($c, 'repository')) {
+            $signature->setRepository($this->resolveDefineRepository(data_get($c, 'repository')));
         }
 
         return $signature;
     }
 
-    private function resolveResolver($name): Resolver
+    private function resolvePayloadResolver($name): Resolver
     {
         $c = data_get($this->config, "resolvers.{$name}");
         if (!$c) {
-            throw new \InvalidArgumentException("no $name resolver");
+            throw new InvalidArgumentException("no $name resolver");
         }
 
         /** @var Resolver $resolver */
-        $resolver = app(data_get($c, 'class'));
-        $resolver->setConfig(Arr::except($c, 'class'));
+        $resolver = $this->app->make(data_get($c, 'class'));
+        $this->applyConfigurator($resolver, Arr::except($c, 'class'));
 
         return $resolver;
     }
 
-    private function resolveRepository($name): Repository
+    private function resolveDefineRepository($name): Repository
     {
         $c = data_get($this->config, "repositories.{$name}");
         if (!$c) {
-            throw new \InvalidArgumentException("no $name repository");
+            throw new InvalidArgumentException("no $name repository");
         }
 
         /** @var Repository $repository */
-        $repository = app(data_get($c, 'class'));
-        $repository->setConfig(Arr::except($c, 'class'));
+        $repository = $this->app->make(data_get($c, 'class'));
+        $this->applyConfigurator($repository, Arr::except($c, 'class'));
 
         return $repository;
+    }
+
+    private function applyConfigurator($cls, array $config): void
+    {
+        if ($cls instanceof Configurator) {
+            $cls->setConfig($config);
+        }
     }
 }

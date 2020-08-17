@@ -11,18 +11,13 @@ class SignatureServiceProvider extends ServiceProvider
 {
     protected $defer = true;
 
-    public function register()
+    public function register(): void
     {
         $this->mergeConfigFrom(
             __DIR__ . '/../config/signature.php', 'signature'
         );
 
-        $this->app->singleton('signature', function ($app) {
-            $config = $app->make('config')->get('signature');
-            return new SignatureManager($config);
-        });
-
-        $this->app->alias('signature', Factory::class);
+        $this->registerSignatureManager();
     }
 
     /**
@@ -30,15 +25,35 @@ class SignatureServiceProvider extends ServiceProvider
      *
      * @return void
      */
-    public function boot()
+    public function boot(): void
     {
-        $this->publishes([
-            __DIR__ . '/../config/signature.php' => config_path('signature.php'),
-        ]);
+        if ($this->app->runningInConsole()) {
+            $this->publishes([
+                __DIR__ . '/../config/signature.php' => config_path('signature.php'),
+            ], 'signature-config');
+
+            $this->publishes([
+                __DIR__ . '/../database/migrations' => database_path('migrations'),
+            ], 'signature-migrations');
+
+            $this->publishes([
+                __DIR__ . '/../database/factories' => database_path('factories'),
+            ], 'signature-factories');
+        }
     }
 
-    public function provides()
+    public function provides(): array
     {
         return ['signature'];
+    }
+
+    private function registerSignatureManager(): void
+    {
+        $this->app->singleton('signature', static function ($app) {
+            $config = $app['config']->get('signature');
+            return new SignatureManager($config, $app);
+        });
+
+        $this->app->alias('signature', Factory::class);
     }
 }

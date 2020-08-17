@@ -1,0 +1,9 @@
+php:
+  image: hypocenter/php:7.2-cli
+  restart: never
+  environment:
+    - COMPOSER_CACHE_DIR=/app/.docker/cache/composer
+    - PHP_IDE_CONFIG=docker-local
+  volumes:
+    - .:/app
+  working_dir: /app
