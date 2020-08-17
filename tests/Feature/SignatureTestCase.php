@@ -19,6 +19,7 @@ abstract class SignatureTestCase extends \Orchestra\Testbench\TestCase
     {
         parent::getEnvironmentSetUp($app);
         $app['config']->set('database.default', 'testing');
+        $app['config']->set('signature.signatures.default.cache_driver', 'array');
     }
 
     protected function setUp(): void
@@ -48,6 +49,7 @@ abstract class SignatureTestCase extends \Orchestra\Testbench\TestCase
 
     protected function setUpCustomSignatureConfig($config): void
     {
+        $config['cache_driver'] = 'array';
         $this->app->get('config')->set('signature.signatures.custom', $config);
     }
 }

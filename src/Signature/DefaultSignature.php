@@ -112,6 +112,7 @@ class DefaultSignature implements Signature, Configurator, RepositoryAware, Reso
         $ctx = new Context($payload, $define);
 
         $this->doSign($ctx);
+        $payload->setSign($ctx->getSign());
 
         return $ctx;
     }
@@ -174,7 +175,7 @@ class DefaultSignature implements Signature, Configurator, RepositoryAware, Reso
             $define->getSecret(),
             $payload->getTimestamp(),
             strtolower($payload->getMethod()),
-            strtolower($payload->getPath()),
+            $payload === '/' ? '/' : strtolower(trim($payload->getPath(), '/')),
             $this->arr2str($data),
             $payload->getNonce(),
         ];
@@ -185,7 +186,6 @@ class DefaultSignature implements Signature, Configurator, RepositoryAware, Reso
         $sign = hash_hmac('sha1', $raw, $define->getSecret());
 
         $ctx->setSign($sign);
-        $payload->setSign($sign);
     }
 
     private function arr2str(?array &$data)

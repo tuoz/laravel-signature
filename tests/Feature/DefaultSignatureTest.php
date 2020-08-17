@@ -4,13 +4,13 @@ namespace Hypocenter\LaravelSignature\Tests\Feature;
 
 use Hypocenter\LaravelSignature\Contracts\Factory;
 use Hypocenter\LaravelSignature\Payload\Payload;
+use Illuminate\Contracts\Routing\Registrar;
 
 
 class DefaultSignatureTest extends SignatureTestCase
 {
     public function testDefaultSignAndVerify(): void
     {
-        $this->withoutExceptionHandling();
         $config = $this->app->get('config')->get('signature');
 
         $this->setUpRoute();
@@ -26,10 +26,46 @@ class DefaultSignatureTest extends SignatureTestCase
         $this->assertEquals(40, strlen($ctx->getSign()));
 
         $res = $this->post('/default/foo', ['a' => 1], [
-            'X-SIGN-APP-ID' => $ctx->getPayload()->getAppId(),
-            'X-SIGN'        => $ctx->getPayload()->getSign(),
-            'X-SIGN-TIME'   => $ctx->getPayload()->getTimestamp(),
-            'X-SIGN-NONCE'  => $ctx->getPayload()->getNonce(),
+            'Accept'        => 'application/json',
+            'X-SIGN-APP-ID' => $py->getAppId(),
+            'X-SIGN'        => $py->getSign(),
+            'X-SIGN-TIME'   => $py->getTimestamp(),
+            'X-SIGN-NONCE'  => $py->getNonce(),
+        ]);
+
+        $res->assertOk();
+        $res->assertSee('bar');
+
+        $res = $this->post('/default/foo', ['a' => 1], [
+            'Accept'        => 'application/json',
+            'X-SIGN-APP-ID' => $py->getAppId(),
+            'X-SIGN'        => $py->getSign(),
+            'X-SIGN-TIME'   => $py->getTimestamp(),
+            'X-SIGN-NONCE'  => $py->getNonce(),
+        ]);
+
+        $res->assertStatus(400);
+        $res->assertSee('The signature has expired');
+    }
+
+    public function testGetRootPath(): void
+    {
+        $router = $this->app->make(Registrar::class);
+        $router->get('/', static function () {
+            return 'bar';
+        });
+
+        $py = Payload::forSign()
+            ->setMethod('GET')
+            ->setPath('/')
+            ->build();
+
+        $res = $this->get('/', [
+            'Accept'        => 'application/json',
+            'X-SIGN-APP-ID' => $py->getAppId(),
+            'X-SIGN'        => $py->getSign(),
+            'X-SIGN-TIME'   => $py->getTimestamp(),
+            'X-SIGN-NONCE'  => $py->getNonce(),
         ]);
 
         $res->assertOk();
@@ -43,10 +79,6 @@ class DefaultSignatureTest extends SignatureTestCase
         $this->setUpCustomSignatureConfig([
             'resolver'       => 'query',
             'repository'     => 'array',
-            'nonce_length'   => 16,
-            'cache_driver'   => 'file',
-            'cache_name'     => 'laravel-signature',
-            'time_tolerance' => 5 * 60,
             'default_app_id' => 'tFVzAUy07VIj2p8v',
         ]);
 
